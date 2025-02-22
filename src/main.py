@@ -1,11 +1,16 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from http import HTTPStatus
 
-from fastapi import FastAPI
+from fastapi import FastAPI, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import ORJSONResponse
 
 from .controllers import account
 from .core.config import settings
 from .db.session import base_ormar_config
+from .schemas.exceptions import APIValidationError, CustomErrorrResponse
+from .utils.exceptions import CustomError
 
 
 def get_lifespan(config):
@@ -22,5 +27,43 @@ def get_lifespan(config):
     return lifespan
 
 
-app = FastAPI(lifespan=get_lifespan(base_ormar_config))
+# common response codes
+responses: set[int] = {
+    status.HTTP_404_NOT_FOUND,
+    status.HTTP_409_CONFLICT,
+    status.HTTP_500_INTERNAL_SERVER_ERROR,
+}
+
+
+app = FastAPI(
+    lifespan=get_lifespan(base_ormar_config),
+    responses={
+        status.HTTP_400_BAD_REQUEST: {"description": "Validation Error", "model": APIValidationError},
+        **{
+            code: {
+                "description": HTTPStatus(code).phrase,
+                "model": CustomErrorrResponse,
+            }
+            for code in responses
+        },
+    },
+)
 app.include_router(account.router, prefix=f"{settings.API_PREFIX}/accounts", tags=["accounts"])
+
+
+@app.exception_handler(CustomError)
+async def custom_error_handler(_, exc: CustomError) -> ORJSONResponse:
+    """Handle custom error."""
+    return ORJSONResponse(
+        status_code=exc.status_code,
+        content={"error_code": exc.error_code, "message": exc.message},
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(_, exc: RequestValidationError) -> ORJSONResponse:
+    """Handle validation exceptions."""
+    return ORJSONResponse(
+        content=APIValidationError.from_pydantic(exc).model_dump(exclude_none=True),
+        status_code=status.HTTP_400_BAD_REQUEST,
+    )
