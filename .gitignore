@@ -256,4 +256,8 @@ tags
 .history
 .ionide
 
+### Custom
+# direnv
+.envrc
+
 # End of https://www.toptal.com/developers/gitignore/api/osx,vim,linux,python,visualstudiocode
