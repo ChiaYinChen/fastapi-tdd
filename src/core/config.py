@@ -1,10 +1,14 @@
 from pydantic import EmailStr
 from pydantic_settings import BaseSettings
 
+from ..constants.logging import LogLevel
+
 
 class Settings(BaseSettings):
     # application
     API_PREFIX: str = "/api"
+    DEBUG: bool = False
+    LOG_LEVEL: str = LogLevel.INFO
     POSTGRES_URI: str = "postgresql://root:root@127.0.0.1:5432/dev"
 
     # testing

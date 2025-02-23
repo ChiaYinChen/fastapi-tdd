@@ -8,6 +8,7 @@ from fastapi.responses import ORJSONResponse
 
 from .controllers import account
 from .core.config import settings
+from .core.logging import configure_logging
 from .db.session import base_ormar_config
 from .schemas.exceptions import APIValidationError, CustomErrorrResponse
 from .utils.exceptions import CustomError
@@ -16,11 +17,17 @@ from .utils.exceptions import CustomError
 def get_lifespan(config):
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        # logging settings
+        configure_logging()
+
+        # check and establish database connection if not already connected
         if not config.database.is_connected:
             await config.database.connect()
 
+        # yield control back to FastAPI to continue with its startup process
         yield
 
+        # disconnect from the database during shutdown if it was previously connected
         if config.database.is_connected:
             await config.database.disconnect()
 
