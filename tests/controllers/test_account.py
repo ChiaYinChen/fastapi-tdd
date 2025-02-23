@@ -1,38 +1,56 @@
 """Unit tests for account API endpoint."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+from unittest.mock import AsyncMock
+
 from httpx import AsyncClient
 
+from src.core.config import settings
+from src.models.account import Account as AccountModel
+from src.schemas.account import AccountCreate
+from src.services.account import AccountService
 from tests.utils.validator import is_valid_time_format
 
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
 
-async def test_register_account(client: AsyncClient) -> None:
+
+async def test_register_account_success(client: AsyncClient) -> None:
     """Test response format of `/api/accounts` endpoint for register a new account."""
-    data = {"email": "hello@gmail.com", "password": "hellopass"}
-    resp = await client.post("/api/accounts", json=data)
+    account_in = AccountCreate(email=settings.TEST_ACCOUNT_EMAIL, password=settings.TEST_ACCOUNT_PASSWORD)
+    resp = await client.post("/api/accounts", json=account_in.model_dump())
     created_account = resp.json()
     assert resp.status_code == 201
     assert isinstance(created_account.get("data"), dict)
     created_account = created_account.get("data")
-    assert set(created_account.keys()) == {"email", "name", "is_active", "created_at", "updated_at"}
+    assert set(created_account.keys()) == {"id", "email", "name", "is_active", "created_at", "updated_at"}
+    assert isinstance(created_account["id"], str)
     assert isinstance(created_account["email"], str)
     assert isinstance(created_account["is_active"], bool)
     assert isinstance(created_account["created_at"], str)
+    assert isinstance(created_account["updated_at"], str)
     assert is_valid_time_format(created_account["created_at"])
+    assert is_valid_time_format(created_account["updated_at"])
 
 
-async def test_register_existing_account(client: AsyncClient) -> None:
+async def test_register_existing_account(client: AsyncClient, mocker: MockerFixture) -> None:
     """Test response format of `/api/accounts` endpoint for register an existing account."""
-    data = {"email": "hello@gmail.com", "password": "hellopass"}
-    resp = await client.post("/api/accounts", json=data)
+    account_in = AccountCreate(email=settings.TEST_ACCOUNT_EMAIL, password=settings.TEST_ACCOUNT_PASSWORD)
+    mock_account = AccountModel(email=settings.TEST_ACCOUNT_EMAIL, hashed_password=settings.TEST_ACCOUNT_PASSWORD)
+    mocker.patch.object(AccountService, "get_account_by_email", new=AsyncMock(return_value=mock_account))
+    resp = await client.post("/api/accounts", json=account_in.model_dump())
     created_account = resp.json()
     assert resp.status_code == 409
     assert isinstance(created_account["error_code"], str)
     assert created_account["message"] == "Email already registered"
+    AccountService.get_account_by_email.assert_called_once()
 
 
 async def test_password_invalid_length(client: AsyncClient) -> None:
     """Test response of `/api/accounts` endpoint for invalid password length."""
-    data = {"email": "admin@gmail.com", "password": "pass"}
+    data = {"email": "hello@example.com", "password": "pass"}
     resp = await client.post("/api/accounts", json=data)
     created_account = resp.json()
     assert resp.status_code == 400

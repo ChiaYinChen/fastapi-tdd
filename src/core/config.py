@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     TESTING: bool = False
     TEST_ACCOUNT_EMAIL: EmailStr = "test@example.com"
     TEST_ACCOUNT_PASSWORD: str = "testpass"
+    TEST_ACCOUNT_NAME: str = "Test User"
 
 
 settings = Settings()

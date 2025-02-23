@@ -1,3 +1,4 @@
+from .. import repositories as crud
 from ..models.account import Account as AccountModel
 from ..schemas.account import AccountCreate
 
@@ -6,6 +7,11 @@ class AccountService:
     """Service for account-related logic."""
 
     @classmethod
+    async def get_account_by_email(cls, email: str) -> AccountModel | None:
+        """Retrieve an account by email."""
+        return await crud.account.get_by_email(email)
+
+    @classmethod
     async def create_account_without_auth(cls, account_in: AccountCreate) -> AccountModel:
         """Register a new account without authentication."""
-        pass
+        return await crud.account.create(account_in)
