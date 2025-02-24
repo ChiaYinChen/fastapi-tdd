@@ -5,8 +5,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock
 
-from httpx import AsyncClient
-
 from src.core.config import settings
 from src.models.account import Account as AccountModel
 from src.schemas.account import AccountCreate
@@ -14,6 +12,7 @@ from src.services.account import AccountService
 from tests.utils.validator import is_valid_time_format
 
 if TYPE_CHECKING:
+    from httpx import AsyncClient
     from pytest_mock import MockerFixture
 
 
@@ -38,12 +37,12 @@ async def test_register_account_success(client: AsyncClient) -> None:
 async def test_register_existing_account(client: AsyncClient, mocker: MockerFixture) -> None:
     """Test response format of `/api/accounts` endpoint for register an existing account."""
     account_in = AccountCreate(email=settings.TEST_ACCOUNT_EMAIL, password=settings.TEST_ACCOUNT_PASSWORD)
-    mock_account = AccountModel(email=settings.TEST_ACCOUNT_EMAIL, hashed_password=settings.TEST_ACCOUNT_PASSWORD)
+    mock_account = AccountModel(email=account_in.email, hashed_password=account_in.hashed_password)
     mocker.patch.object(AccountService, "get_account_by_email", new=AsyncMock(return_value=mock_account))
     resp = await client.post("/api/accounts", json=account_in.model_dump())
     created_account = resp.json()
     assert resp.status_code == 409
-    assert isinstance(created_account["error_code"], str)
+    assert created_account["error_code"] == "1002"
     assert created_account["message"] == "Email already registered"
     AccountService.get_account_by_email.assert_called_once()
 
@@ -54,4 +53,4 @@ async def test_password_invalid_length(client: AsyncClient) -> None:
     resp = await client.post("/api/accounts", json=data)
     created_account = resp.json()
     assert resp.status_code == 400
-    assert isinstance(created_account["error_code"], str)
+    assert created_account["error_code"] == "0000"

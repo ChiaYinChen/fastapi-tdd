@@ -1,8 +1,9 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_serializer, field_validator
 
+from ..core.security import get_password_hash
 from ..schemas.common import DateTimeAnnotation
 
 
@@ -14,6 +15,10 @@ class AccountCreate(BaseModel):
     email: EmailStr
     hashed_password: str = Field(..., min_length=6, alias="password")
     name: str | None = Field(None, max_length=30)
+
+    @field_validator("hashed_password", mode="after")
+    def set_hashed_password(cls, value: str) -> str:
+        return get_password_hash(value)
 
 
 class Account(BaseModel):

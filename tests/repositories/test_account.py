@@ -34,7 +34,7 @@ async def test_create_account() -> None:
 async def test_get_account(mocker: MockerFixture) -> None:
     """Test for retrieve an existing account by email."""
     # mock get_by_email to return a predefined account object
-    mock_account = AccountModel(email=settings.TEST_ACCOUNT_EMAIL, hashed_password=settings.TEST_ACCOUNT_PASSWORD)
+    mock_account = AccountModel(email=settings.TEST_ACCOUNT_EMAIL, hashed_password="hashed_password")
     mocker.patch.object(crud.account, "get_by_email", new=AsyncMock(return_value=mock_account))
     # call the method and verify the returned account
     account = await crud.account.get_by_email(email=settings.TEST_ACCOUNT_EMAIL)
@@ -51,7 +51,7 @@ async def test_get_account_with_unregistered_email() -> None:
 
 def test_check_if_account_is_active() -> None:
     """Test for check if account is active."""
-    mock_account = AccountModel(email=settings.TEST_ACCOUNT_EMAIL, hashed_password=settings.TEST_ACCOUNT_PASSWORD)
+    mock_account = AccountModel(email=settings.TEST_ACCOUNT_EMAIL, hashed_password="hashed_password")
     is_active = crud.account.is_active(mock_account)
     assert isinstance(is_active, bool)
     assert is_active is True

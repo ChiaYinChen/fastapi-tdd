@@ -6,7 +6,7 @@ from fastapi import FastAPI, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import ORJSONResponse
 
-from .controllers import account
+from .controllers import account, auth
 from .core.config import settings
 from .core.logging import configure_logging
 from .db.session import base_ormar_config
@@ -36,6 +36,8 @@ def get_lifespan(config):
 
 # common response codes
 responses: set[int] = {
+    status.HTTP_401_UNAUTHORIZED,
+    status.HTTP_403_FORBIDDEN,
     status.HTTP_404_NOT_FOUND,
     status.HTTP_409_CONFLICT,
     status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -56,6 +58,7 @@ app = FastAPI(
     },
 )
 app.include_router(account.router, prefix=f"{settings.API_PREFIX}/accounts", tags=["accounts"])
+app.include_router(auth.router, prefix=f"{settings.API_PREFIX}/auth", tags=["auth"])
 
 
 @app.exception_handler(CustomError)
