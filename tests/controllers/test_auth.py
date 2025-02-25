@@ -32,7 +32,9 @@ async def test_login_via_password(client: AsyncClient, mocker: MockerFixture) ->
     assert tokens["access_token"] == "mock_access_token"
     assert tokens["refresh_token"] == "mock_refresh_token"
     assert tokens["token_type"] == "bearer"
-    AuthService.authenticate.assert_called_once_with(settings.TEST_ACCOUNT_EMAIL, settings.TEST_ACCOUNT_PASSWORD)
+    AuthService.authenticate.assert_called_once_with(
+        email=settings.TEST_ACCOUNT_EMAIL, password=settings.TEST_ACCOUNT_PASSWORD
+    )
     AuthService.create_access_token.assert_called_once()
     AuthService.create_refresh_token.assert_called_once()
 
@@ -51,4 +53,4 @@ async def test_login_with_invalid_password(client: AsyncClient, mocker: MockerFi
     assert tokens["message"] == "Incorrect email or password"
 
     # verify `authenticate` was called once with the correct parameters
-    mock_authenticate.assert_called_once_with(settings.TEST_ACCOUNT_EMAIL, "incorrect_password")
+    mock_authenticate.assert_called_once_with(email=settings.TEST_ACCOUNT_EMAIL, password="incorrect_password")
