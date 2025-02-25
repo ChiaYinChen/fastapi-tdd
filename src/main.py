@@ -2,10 +2,12 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from http import HTTPStatus
 
+import jwt
 from fastapi import FastAPI, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import ORJSONResponse
 
+from .constants.errors import CustomErrorCode
 from .controllers import account, auth
 from .core.config import settings
 from .core.logging import configure_logging
@@ -76,4 +78,18 @@ async def validation_exception_handler(_, exc: RequestValidationError) -> ORJSON
     return ORJSONResponse(
         content=APIValidationError.from_pydantic(exc).model_dump(exclude_none=True),
         status_code=status.HTTP_400_BAD_REQUEST,
+    )
+
+
+@app.exception_handler(jwt.exceptions.PyJWTError)
+async def jose_exception_handler(_, exc: jwt.exceptions.PyJWTError) -> ORJSONResponse:
+    """Handle jwt exceptions."""
+    if isinstance(exc, jwt.exceptions.ExpiredSignatureError):
+        return ORJSONResponse(
+            status_code=401,
+            content={"error_code": CustomErrorCode.TOKEN_EXPIRED, "message": "Token expired"},
+        )
+    return ORJSONResponse(
+        status_code=401,
+        content={"error_code": CustomErrorCode.INVALID_CREDENTIALS, "message": "Could not validate credentials"},
     )
