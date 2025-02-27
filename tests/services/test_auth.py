@@ -123,6 +123,7 @@ def test_decode_token() -> None:
     assert decoded_data.type == token_type
     assert decoded_data.sub == sub
     assert isinstance(decoded_data.exp, int)
+    assert isinstance(decoded_data.jti, str)
 
     expected_exp = datetime.now(UTC) + lifetime
     # allow a small buffer (5 seconds) for the expiration time

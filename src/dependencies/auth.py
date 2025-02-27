@@ -1,7 +1,9 @@
 from typing import Annotated
 
-from fastapi import Depends, Security
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from src.schemas.auth import TokenPayload
 
 from .. import repositories as crud
 from ..constants.errors import CustomErrorCode
@@ -9,20 +11,71 @@ from ..core.security import decode_token
 from ..models.account import Account as AccountModel
 from ..utils import exceptions as exc
 
-security = HTTPBearer(auto_error=False)
+
+class TokenBearer(HTTPBearer):
+    """Handle token authentication using HTTP Bearer token."""
+
+    def __init__(self, auto_error=True):
+        super().__init__(auto_error=auto_error)
+
+    async def __call__(self, request: Request) -> TokenPayload | None:
+        """Validate the token from the request."""
+        credentials: HTTPAuthorizationCredentials | None = await super().__call__(request)
+        if not credentials:
+            return None
+        token_data = decode_token(token=credentials.credentials)
+        if not self.validate_token_data(token_data):
+            raise exc.UnauthenticatedError(CustomErrorCode.INVALID_TOKEN_TYPE, "Invalid token type")
+        return token_data
+
+    def validate_token_data(self, token_data: TokenPayload) -> bool:
+        """Validate the token type."""
+        raise NotImplementedError("Subclasses must implement this method")
 
 
-async def get_account_from_token(
-    credentials: HTTPAuthorizationCredentials | None = Security(security),
+class AccessTokenBearer(TokenBearer):
+    """Handle access token validation."""
+
+    def validate_token_data(self, token_data: TokenPayload) -> bool:
+        """Check if the token is an access token."""
+        return True if token_data.type == "access" else False
+
+
+class RefreshTokenBearer(TokenBearer):
+    """Handle refresh token validation."""
+
+    def validate_token_data(self, token_data: TokenPayload) -> bool:
+        """Check if the token is a refresh token and ensure it has not been revoked."""
+        if token_data.type != "refresh":
+            return False
+        if self.is_token_revoked(token_data.jti):
+            raise exc.UnauthenticatedError(CustomErrorCode.TOKEN_REVOKED, "Token revoked")
+        return True
+
+    def is_token_revoked(self, jti: str) -> bool:
+        """Check if the token has been revoked."""
+        # TODO: implement with redis
+        return False
+
+
+async def get_account_from_access_token(
+    token_data: TokenPayload | None = Depends(AccessTokenBearer(auto_error=False)),
 ) -> AccountModel | None:
-    """Retrieve the account with a valid access token."""
-    if credentials is None:
+    """Retrieve the account using an access token."""
+    if not token_data:
         return None
-    # decode token and ensure it is of type 'access'
-    token_data = decode_token(token=credentials.credentials)
-    if token_data.type != "access":
-        raise exc.UnauthenticatedError(CustomErrorCode.INVALID_TOKEN_TYPE, "Invalid token type")
-    # check if account is valid
+    account = await crud.account.get_by_email(email=token_data.sub)
+    if not account:
+        raise exc.NotFoundError(CustomErrorCode.ENTITY_NOT_FOUND, "Account not found")
+    return account
+
+
+async def get_account_from_refresh_token(
+    token_data: TokenPayload | None = Depends(RefreshTokenBearer(auto_error=False)),
+) -> AccountModel:
+    """Retrieve the account using a refresh token."""
+    if not token_data:
+        raise exc.UnauthenticatedError(CustomErrorCode.NOT_AUTHENTICATED, "Not authenticated")
     account = await crud.account.get_by_email(email=token_data.sub)
     if not account:
         raise exc.NotFoundError(CustomErrorCode.ENTITY_NOT_FOUND, "Account not found")
@@ -35,7 +88,7 @@ class RoleChecker:
     def __init__(self, allowed_roles: list):
         self.allowed_roles = allowed_roles
 
-    def __call__(self, current_user: AccountModel | None = Depends(get_account_from_token)):
+    def __call__(self, current_user: AccountModel | None = Depends(get_account_from_access_token)):
         """
         Validate the user's permission for a specific operation.
 
@@ -56,5 +109,4 @@ class RoleChecker:
         return None
 
 
-allow_member_only = RoleChecker(["MEMBER"])
-AuthenticatedMember = Annotated[AccountModel | None, Depends(allow_member_only)]
+AuthenticatedMember = Annotated[AccountModel | None, Depends(RoleChecker(["MEMBER"]))]

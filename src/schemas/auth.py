@@ -22,3 +22,4 @@ class TokenPayload(BaseModel):
     sub: str
     type: str
     exp: int
+    jti: str

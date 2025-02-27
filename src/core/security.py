@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from uuid import uuid4
 
 import jwt
 from passlib.context import CryptContext
@@ -22,7 +23,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def encode_token(token_type: str, lifetime: timedelta, sub: str) -> str:
     """Encode token."""
     utc_now = datetime.now(UTC)
-    payload = {"type": token_type, "iat": utc_now, "exp": utc_now + lifetime, "sub": str(sub)}
+    payload = {"type": token_type, "iat": utc_now, "exp": utc_now + lifetime, "sub": str(sub), "jti": str(uuid4())}
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
