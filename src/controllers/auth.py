@@ -1,12 +1,18 @@
-from typing import Any
+from __future__ import annotations
 
-from fastapi import APIRouter, status
+from typing import TYPE_CHECKING, Any
+
+from fastapi import APIRouter, Depends, status
 
 from ..constants.errors import CustomErrorCode
+from ..dependencies.auth import get_account_from_refresh_token
 from ..schemas.auth import LoginRequest, Token
 from ..schemas.response import GenericResponse
 from ..services.auth import AuthService
 from ..utils import exceptions as exc
+
+if TYPE_CHECKING:
+    from ..models.account import Account as AccountModel
 
 router = APIRouter()
 
@@ -31,6 +37,24 @@ async def login(login_data: LoginRequest) -> Any:
         data=Token(
             access_token=AuthService.create_access_token(sub=account.email),
             refresh_token=AuthService.create_refresh_token(sub=account.email),
+            token_type="bearer",
+        )
+    )
+
+
+@router.post(
+    "/refresh-token",
+    response_model=GenericResponse[Token],
+    status_code=status.HTTP_200_OK,
+)
+async def refresh_token(current_user: AccountModel = Depends(get_account_from_refresh_token)) -> Any:
+    """
+    Renew the user's access token with refresh token.
+    """
+    return GenericResponse(
+        data=Token(
+            access_token=AuthService.create_access_token(sub=current_user.email),
+            refresh_token=AuthService.create_refresh_token(sub=current_user.email),
             token_type="bearer",
         )
     )
