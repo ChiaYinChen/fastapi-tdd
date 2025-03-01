@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import pytest
 from fastapi import Request
 
+from src.constants.token import TokenStatus
 from src.dependencies.auth import (
     AccessTokenBearer,
     RefreshTokenBearer,
@@ -150,6 +151,27 @@ async def test_revoked_refresh_token(mocker: MockerFixture, mock_revoked_refresh
     assert exc_info.value.error_code.value == "4005"
     assert exc_info.value.message == "Token revoked"
     mock_is_token_revoked.assert_called_once_with("revoked_token")
+
+
+async def test_is_token_revoked_in_redis(mocker: MockerFixture) -> None:
+    """Test if a revoked token exists in the Redis blacklist."""
+    test_token = "test_revoked_token"
+    mock_revoke_token = mocker.patch.object(blacklist, "get", return_value=None)
+    is_token_revoked = RefreshTokenBearer().is_token_revoked(test_token)
+    mock_revoke_token.assert_called_once_with(token="test_revoked_token")
+    assert mock_revoke_token.return_value is None
+    assert is_token_revoked is False
+
+
+async def test_is_token_marked_revoked_in_redis(mocker: MockerFixture) -> None:
+    """Test if the token is marked as revoked."""
+    test_token = "test_revoked_token"
+    mock_revoke_token = mocker.patch.object(blacklist, "get", return_value=str(TokenStatus.REVOKED.value))
+    is_token_revoked = RefreshTokenBearer().is_token_revoked(test_token)
+    mock_revoke_token.assert_called_once_with(token="test_revoked_token")
+    assert isinstance(mock_revoke_token.return_value, str)
+    assert mock_revoke_token.return_value == "40"
+    assert is_token_revoked is True
 
 
 async def test_get_account_from_access_token(mocker: MockerFixture, mock_access_token: TokenPayload) -> None:

@@ -50,3 +50,7 @@ api-attach:
 up-postgres:
 	@echo "Start PostgreSQL"
 	@docker compose $(FILE_ARGS) up -d postgres
+
+up-redis:
+	@echo "Start Redis"
+	@docker compose $(FILE_ARGS) up -d redis

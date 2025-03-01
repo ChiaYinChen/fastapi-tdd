@@ -10,4 +10,4 @@ async def test_save_and_get_revoked_token():
     assert token_blacklist.get(test_token) is None
 
     token_blacklist.save(test_token, 5)  # 5 seconds
-    assert token_blacklist.get(test_token) == "1"
+    assert token_blacklist.get(test_token) == "40"

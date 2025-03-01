@@ -1,3 +1,5 @@
+from src.constants.token import TokenStatus
+
 from ..db.redis import RedisClient
 
 
@@ -10,8 +12,8 @@ class TokenBlackList:
 
     def get(self, token: str) -> str | None:
         """Check if a token has been revoked."""
-        pass
+        return self.client.get(token)
 
     def save(self, token: str, ttl: int) -> None:
         """Set the token as invalid."""
-        pass
+        self.client.set(token, TokenStatus.REVOKED.value, ttl)
