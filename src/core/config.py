@@ -13,13 +13,20 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_TTL: int = 15 * 60  # second
     REFRESH_TOKEN_TTL: int = 60 * 24 * 60  # second
+
+    # postgres
     POSTGRES_URI: str = "postgresql://root:root@postgres:5432/dev"
+
+    # redis
+    REDIS_URI: str = "redis://redis:6379"
+    BLACK_LIST_REDIS_DB: int = 1
 
     # testing
     TESTING: bool = False
     TEST_ACCOUNT_EMAIL: EmailStr = "test@example.com"
     TEST_ACCOUNT_PASSWORD: str = "testpass"
     TEST_ACCOUNT_NAME: str = "Test User"
+    TEST_REDIS_DB: int = 0
 
 
 settings = Settings()

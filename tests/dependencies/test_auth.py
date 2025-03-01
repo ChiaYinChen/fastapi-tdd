@@ -10,6 +10,7 @@ from src.dependencies.auth import (
     RefreshTokenBearer,
     RoleChecker,
     TokenBearer,
+    blacklist,
     get_account_from_access_token,
     get_account_from_refresh_token,
 )
@@ -124,19 +125,22 @@ async def test_access_token_bearer(mocker: MockerFixture, mock_access_token: Tok
 async def test_refresh_token_bearer(mocker: MockerFixture, mock_refresh_token: TokenPayload) -> None:
     """Test RefreshTokenBearer with valid token."""
     mocker.patch("src.dependencies.auth.decode_token", return_value=mock_refresh_token)
-    mocker.patch("src.dependencies.auth.RefreshTokenBearer.is_token_revoked", return_value=False)
+    mock_is_token_revoked = mocker.patch(
+        "src.dependencies.auth.RefreshTokenBearer.is_token_revoked", return_value=False
+    )
     request = Request({"type": "http", "headers": [(b"authorization", b"Bearer valid_token")]})
     refresh_token_bearer = RefreshTokenBearer(auto_error=False)
     token_data = await refresh_token_bearer(request)
 
     assert isinstance(token_data, TokenPayload)
     assert token_data.type == "refresh"
+    mock_is_token_revoked.assert_called_once_with("54321")
 
 
 async def test_revoked_refresh_token(mocker: MockerFixture, mock_revoked_refresh_token: TokenPayload) -> None:
     """Test RefreshTokenBearer rejects revoked token."""
     mocker.patch("src.dependencies.auth.decode_token", return_value=mock_revoked_refresh_token)
-    mocker.patch("src.dependencies.auth.RefreshTokenBearer.is_token_revoked", return_value=True)
+    mock_is_token_revoked = mocker.patch("src.dependencies.auth.RefreshTokenBearer.is_token_revoked", return_value=True)
     request = Request({"type": "http", "headers": [(b"authorization", b"Bearer valid_token")]})
     refresh_token_bearer = RefreshTokenBearer(auto_error=False)
 
@@ -145,6 +149,7 @@ async def test_revoked_refresh_token(mocker: MockerFixture, mock_revoked_refresh
 
     assert exc_info.value.error_code.value == "4005"
     assert exc_info.value.message == "Token revoked"
+    mock_is_token_revoked.assert_called_once_with("revoked_token")
 
 
 async def test_get_account_from_access_token(mocker: MockerFixture, mock_access_token: TokenPayload) -> None:
@@ -181,9 +186,11 @@ async def test_get_account_from_refresh_token(mocker: MockerFixture, mock_refres
         "src.repositories.account.account.get_by_email",
         return_value=AccountModel(email="test_user@example.com", hashed_password="valid_password"),
     )
+    mock_revoke_token = mocker.patch.object(blacklist, "save", return_value=None)
     account = await get_account_from_refresh_token(mock_refresh_token)
     assert isinstance(account, AccountModel)
     assert account.email == "test_user@example.com"
+    mock_revoke_token.assert_called_once()
 
 
 async def test_get_account_from_refresh_token_with_no_credential() -> None:
@@ -198,11 +205,13 @@ async def test_get_account_from_refresh_token_with_account_not_found(
     mocker: MockerFixture, mock_refresh_token: TokenPayload
 ) -> None:
     """Test NotFoundError if account does not exist."""
+    mock_revoke_token = mocker.patch.object(blacklist, "save", return_value=None)
     mocker.patch("src.repositories.account.account.get_by_email", return_value=None)
     with pytest.raises(NotFoundError) as exc_info:
         await get_account_from_refresh_token(mock_refresh_token)
     assert exc_info.value.error_code.value == "1001"
     assert exc_info.value.message == "Account not found"
+    mock_revoke_token.assert_called_once()
 
 
 def test_role_checker_with_guest_allowed() -> None:

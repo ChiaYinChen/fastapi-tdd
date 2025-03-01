@@ -7,9 +7,13 @@ from src.schemas.auth import TokenPayload
 
 from .. import repositories as crud
 from ..constants.errors import CustomErrorCode
+from ..core.config import settings
 from ..core.security import decode_token
 from ..models.account import Account as AccountModel
 from ..utils import exceptions as exc
+from ..utils.blacklist import TokenBlackList
+
+blacklist = TokenBlackList(db=settings.BLACK_LIST_REDIS_DB)
 
 
 class TokenBearer(HTTPBearer):
@@ -54,8 +58,7 @@ class RefreshTokenBearer(TokenBearer):
 
     def is_token_revoked(self, jti: str) -> bool:
         """Check if the token has been revoked."""
-        # TODO: implement with redis
-        return False
+        return True if blacklist.get(token=jti) else False
 
 
 async def get_account_from_access_token(
@@ -76,6 +79,7 @@ async def get_account_from_refresh_token(
     """Retrieve the account using a refresh token."""
     if not token_data:
         raise exc.UnauthenticatedError(CustomErrorCode.NOT_AUTHENTICATED, "Not authenticated")
+    blacklist.save(token=token_data.jti, ttl=settings.REFRESH_TOKEN_TTL)
     account = await crud.account.get_by_email(email=token_data.sub)
     if not account:
         raise exc.NotFoundError(CustomErrorCode.ENTITY_NOT_FOUND, "Account not found")

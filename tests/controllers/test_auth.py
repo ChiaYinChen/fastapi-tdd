@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock
 
 from src.core.config import settings
+from src.dependencies.auth import blacklist
 from src.models.account import Account as AccountModel
 from src.schemas.auth import LoginRequest
 from src.services.auth import AuthService
@@ -63,6 +64,8 @@ async def test_renew_access_token_with_refresh_token(client: AsyncClient, mocker
     mocker.patch("src.repositories.account.account.get_by_email", return_value=mock_account)
     mocker.patch.object(AuthService, "create_access_token", return_value="mock_new_access_token")
     mocker.patch.object(AuthService, "create_refresh_token", return_value="mock_new_refresh_token")
+    mock_get_revoked_token = mocker.patch.object(blacklist, "get", return_value=None)
+    mock_revoke_token = mocker.patch.object(blacklist, "save", return_value=None)
 
     resp = await client.post("/api/auth/refresh-token", headers={"Authorization": f"Bearer {valid_refresh_token}"})
     assert resp.status_code == 200
@@ -74,3 +77,5 @@ async def test_renew_access_token_with_refresh_token(client: AsyncClient, mocker
     assert tokens["token_type"] == "bearer"
     AuthService.create_access_token.assert_called_once()
     AuthService.create_refresh_token.assert_called_once()
+    mock_get_revoked_token.assert_called_once()
+    mock_revoke_token.assert_called_once()
