@@ -7,8 +7,11 @@ from ..schemas.account import Account, AccountCreate
 from ..schemas.response import GenericResponse
 from ..services.account import AccountService
 from ..utils import exceptions as exc
+from ..utils.mails import AccountVerificationEmail, EmailSender
 
 router = APIRouter()
+registration_email = AccountVerificationEmail()
+email_sender = EmailSender(registration_email)
 
 
 @router.post(
@@ -25,4 +28,5 @@ async def create_account(account_in: AccountCreate) -> Any:
     if account_obj:
         raise exc.ConflictError(CustomErrorCode.ENTITY_CONFLICT, "Email already registered")
     account = await AccountService.create_account_without_auth(account_in)
+    await email_sender.send(recipients=[account.email])
     return GenericResponse(data=account)
