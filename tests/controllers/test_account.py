@@ -34,7 +34,9 @@ async def test_register_account_success(client: AsyncClient, mocker: MockerFixtu
     assert isinstance(created_account["updated_at"], str)
     assert is_valid_time_format(created_account["created_at"])
     assert is_valid_time_format(created_account["updated_at"])
-    mock_send_email.assert_called_once_with(recipients=[created_account["email"]], username=created_account["name"])
+    mock_send_email.assert_called_once_with(
+        recipients=[created_account["email"]], username=created_account["name"], email=created_account["email"]
+    )
 
 
 async def test_register_existing_account(client: AsyncClient, mocker: MockerFixture) -> None:

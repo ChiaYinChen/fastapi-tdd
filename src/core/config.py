@@ -7,6 +7,7 @@ from ..constants.logging import LogLevel
 class Settings(BaseSettings):
     # application
     API_PREFIX: str = "/api"
+    DOMAIN: str = "http://127.0.0.1:8000"
     DEBUG: bool = False
     LOG_LEVEL: str = LogLevel.INFO
     SECRET_KEY: str = "TEST_SECRET_DO_NOT_USE_IN_PROD"

@@ -7,6 +7,8 @@ from pathlib import Path
 
 from jinja2 import Template
 
+from src.core.security import encode_url_safe_token
+
 from ..core.config import settings
 
 TEMPLATE_FOLDER = Path(__file__).parents[1] / "templates"
@@ -75,8 +77,13 @@ class AccountVerificationEmail(EmailGenerator):
     def email_subject(self) -> str:
         return "Account Verification"
 
+    def generate_verification_url(self, email: str) -> str:
+        token = encode_url_safe_token({"email": email})
+        return f"{settings.DOMAIN}/api/accounts/email-verification?token={token}"
+
     def email_context(self, *args, **kwargs) -> dict:
-        return {"user_name": kwargs.get("username")}
+        verification_url = self.generate_verification_url(kwargs.get("email"))
+        return {"user_name": kwargs.get("username"), "verification_url": verification_url}
 
 
 class EmailSender:
