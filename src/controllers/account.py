@@ -28,5 +28,5 @@ async def create_account(account_in: AccountCreate) -> Any:
     if account_obj:
         raise exc.ConflictError(CustomErrorCode.ENTITY_CONFLICT, "Email already registered")
     account = await AccountService.create_account_without_auth(account_in)
-    await email_sender.send(recipients=[account.email])
+    await email_sender.send(recipients=[account.email], username=account.name)
     return GenericResponse(data=account)

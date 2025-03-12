@@ -7,6 +7,11 @@ services:
     environment:
       - TESTING=${TESTING:-false}
       - DEBUG=${DEBUG:-false}
+      - MAIL_SERVER=${MAIL_SERVER}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_SENDER=${MAIL_SENDER:-no-reply@example.com}
     ports:
       - 8000:8000
     volumes:

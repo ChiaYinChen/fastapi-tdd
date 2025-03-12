@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     REDIS_URI: str = "redis://redis:6379"
     BLACK_LIST_REDIS_DB: int = 1
 
+    # smtp
+    MAIL_SERVER: str
+    MAIL_PORT: int
+    MAIL_USERNAME: str
+    MAIL_PASSWORD: str
+    MAIL_SENDER: str = "no-reply@example.com"
+
     # testing
     TESTING: bool = False
     TEST_ACCOUNT_EMAIL: EmailStr = "test@example.com"
