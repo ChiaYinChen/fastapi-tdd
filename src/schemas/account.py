@@ -34,3 +34,9 @@ class Account(BaseModel):
     @field_serializer("created_at", "updated_at")
     def format_datetime(self, value: datetime) -> str:
         return value.strftime("%Y-%m-%dT%H:%M:%S")
+
+
+class AccountUpdate(BaseModel):
+    """Input schema for update account."""
+
+    pass

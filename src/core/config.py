@@ -12,8 +12,9 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = LogLevel.INFO
     SECRET_KEY: str = "TEST_SECRET_DO_NOT_USE_IN_PROD"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_TTL: int = 15 * 60  # second
-    REFRESH_TOKEN_TTL: int = 60 * 24 * 60  # second
+    ACCESS_TOKEN_TTL: int = 15 * 60  # second (15 mins)
+    REFRESH_TOKEN_TTL: int = 60 * 24 * 60  # second (1 day)
+    URL_SAFE_TOKEN_TTL: int = 60 * 60  # second (1 hour)
 
     # postgres
     POSTGRES_URI: str = "postgresql://root:root@postgres:5432/dev"

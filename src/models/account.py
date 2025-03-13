@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import uuid4
 
 import ormar
@@ -17,3 +18,5 @@ class Account(ormar.Model, DateFieldsMixin):
     hashed_password: str = ormar.String(max_length=255, nullable=False, name="password")
     name: str = ormar.String(max_length=30, nullable=True)
     is_active: bool = ormar.Boolean(nullable=False, server_default=expression.true(), default=True)
+    is_verified: bool = ormar.Boolean(nullable=False, server_default=expression.false(), default=False)
+    verified_at: datetime = ormar.DateTime(nullable=True)

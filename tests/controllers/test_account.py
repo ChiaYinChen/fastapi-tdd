@@ -59,3 +59,13 @@ async def test_password_invalid_length(client: AsyncClient) -> None:
     created_account = resp.json()
     assert resp.status_code == 400
     assert created_account["error_code"] == "0000"
+
+
+async def test_verifiy_account_success(client: AsyncClient, mocker: MockerFixture) -> None:
+    """Test account verification via `/api/accounts/email-verification`."""
+    mock_token = "mock_token"
+    mocker.patch.object(AccountService, "verify_account", new=AsyncMock(return_value=None))
+    resp = await client.get("/api/accounts/email-verification", params={"token": mock_token})
+    assert resp.status_code == 200
+    assert resp.json()["message"] == "Account verified successfully"
+    AccountService.verify_account.assert_called_once_with(mock_token)

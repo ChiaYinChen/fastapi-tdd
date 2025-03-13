@@ -34,3 +34,13 @@ async def create_account(account_in: AccountCreate) -> Any:
         username=account.name,
     )
     return GenericResponse(data=account)
+
+
+@router.get(
+    "/email-verification",
+)
+async def confirm_email_verification(token: str) -> Any:
+    """
+    Verify a user's email to confirm registration.
+    """
+    pass
