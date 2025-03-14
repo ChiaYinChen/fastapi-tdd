@@ -1,6 +1,12 @@
+from datetime import datetime
+
 from .. import repositories as crud
+from ..constants.errors import CustomErrorCode
+from ..core.config import settings
+from ..core.security import decode_url_safe_token
 from ..models.account import Account as AccountModel
 from ..schemas.account import AccountCreate
+from ..utils import exceptions as exc
 
 
 class AccountService:
@@ -24,4 +30,8 @@ class AccountService:
         Decode the token to get the account email and mark the account
         as verified if it exists.
         """
-        pass
+        token_data = decode_url_safe_token(token, max_age=settings.URL_SAFE_TOKEN_TTL)
+        account = await crud.account.get_by_email(token_data["email"])
+        if not account:
+            raise exc.NotFoundError(CustomErrorCode.ENTITY_NOT_FOUND, "Account not found")
+        await crud.account.update(db_obj=account, obj_in={"is_verified": True, "verified_at": datetime.now()})

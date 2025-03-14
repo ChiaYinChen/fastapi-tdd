@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from http import HTTPStatus
 
+import itsdangerous
 import jwt
 from fastapi import FastAPI, status
 from fastapi.exceptions import RequestValidationError
@@ -82,9 +83,23 @@ async def validation_exception_handler(_, exc: RequestValidationError) -> ORJSON
 
 
 @app.exception_handler(jwt.exceptions.PyJWTError)
-async def jose_exception_handler(_, exc: jwt.exceptions.PyJWTError) -> ORJSONResponse:
-    """Handle jwt exceptions."""
+async def jwt_exception_handler(_, exc: jwt.exceptions.PyJWTError) -> ORJSONResponse:
+    """Handle exceptions related to JWT authentication errors."""
     if isinstance(exc, jwt.exceptions.ExpiredSignatureError):
+        return ORJSONResponse(
+            status_code=401,
+            content={"error_code": CustomErrorCode.TOKEN_EXPIRED, "message": "Token expired"},
+        )
+    return ORJSONResponse(
+        status_code=401,
+        content={"error_code": CustomErrorCode.INVALID_CREDENTIALS, "message": "Could not validate credentials"},
+    )
+
+
+@app.exception_handler(itsdangerous.exc.BadData)
+async def url_safe_token_exception_handler(_, exc: itsdangerous.exc.BadData) -> ORJSONResponse:
+    """Handle exceptions related to URL-safe token validation errors."""
+    if isinstance(exc, itsdangerous.exc.SignatureExpired):
         return ORJSONResponse(
             status_code=401,
             content={"error_code": CustomErrorCode.TOKEN_EXPIRED, "message": "Token expired"},

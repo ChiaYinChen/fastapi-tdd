@@ -43,4 +43,5 @@ async def confirm_email_verification(token: str) -> Any:
     """
     Verify a user's email to confirm registration.
     """
-    pass
+    await AccountService.verify_account(token)
+    return GenericResponse(message="Account verified successfully")
