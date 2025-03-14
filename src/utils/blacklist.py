@@ -1,5 +1,4 @@
-from src.constants.token import TokenStatus
-
+from ..constants.token import TokenStatus
 from ..db.redis import RedisClient
 
 

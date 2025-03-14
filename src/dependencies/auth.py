@@ -3,13 +3,12 @@ from typing import Annotated
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from src.schemas.auth import TokenPayload
-
 from .. import repositories as crud
 from ..constants.errors import CustomErrorCode
 from ..core.config import settings
 from ..core.security import decode_token
 from ..models.account import Account as AccountModel
+from ..schemas.auth import TokenPayload
 from ..utils import exceptions as exc
 from ..utils.blacklist import TokenBlackList
 

@@ -7,9 +7,8 @@ from pathlib import Path
 
 from jinja2 import Template
 
-from src.core.security import encode_url_safe_token
-
 from ..core.config import settings
+from ..core.security import encode_url_safe_token
 
 TEMPLATE_FOLDER = Path(__file__).parents[1] / "templates"
 
