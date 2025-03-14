@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 
-async def test_create_account_without_auth() -> None:
+async def test_create_account_without_auth(db_session) -> None:
     """Test for create account without authentication."""
     account_in = AccountCreate(
         email=settings.TEST_ACCOUNT_EMAIL, password=settings.TEST_ACCOUNT_PASSWORD, name=settings.TEST_ACCOUNT_NAME
@@ -50,7 +50,7 @@ async def test_get_account_by_email_not_found(mocker: MockerFixture) -> None:
     assert account is None
 
 
-async def test_verify_account(mocker: MockerFixture) -> None:
+async def test_verify_account(db_session, mocker: MockerFixture) -> None:
     """Test account verification logic in `AccountService.verify_account`."""
     mock_token_data = {"email": settings.TEST_ACCOUNT_EMAIL}
     mock_decode_token = mocker.patch("src.services.account.decode_url_safe_token", return_value=mock_token_data)

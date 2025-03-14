@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 
-async def test_register_account_success(client: AsyncClient, mocker: MockerFixture) -> None:
+async def test_register_account_success(client: AsyncClient, mocker: MockerFixture, db_session) -> None:
     """Test response format of `/api/accounts` endpoint for register a new account."""
     mock_send_email = mocker.patch.object(email_sender, "send", new=AsyncMock(return_value=None))
     account_in = AccountCreate(email=settings.TEST_ACCOUNT_EMAIL, password=settings.TEST_ACCOUNT_PASSWORD)

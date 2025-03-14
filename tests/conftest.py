@@ -8,8 +8,8 @@ from src.db.session import base_ormar_config
 from src.main import app
 
 
-@pytest.fixture(scope="function", autouse=True)
-async def db() -> AsyncGenerator:
+@pytest.fixture(scope="function")
+async def db_session() -> AsyncGenerator:
     """Database connection for tests"""
     if not base_ormar_config.database.is_connected:
         await base_ormar_config.database.connect()

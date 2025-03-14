@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 
-async def test_create_account() -> None:
+async def test_create_account(db_session) -> None:
     """Test for create account."""
     account_in = AccountCreate(email=settings.TEST_ACCOUNT_EMAIL, password=settings.TEST_ACCOUNT_PASSWORD)
     account = await crud.account.create(obj_in=account_in)
@@ -43,7 +43,7 @@ async def test_get_account(mocker: MockerFixture) -> None:
     assert account.email == settings.TEST_ACCOUNT_EMAIL
 
 
-async def test_get_account_with_unregistered_email() -> None:
+async def test_get_account_with_unregistered_email(db_session) -> None:
     """Test for retrieve account with unregistered email."""
     account = await crud.account.get_by_email(email="not_exists@example.com")
     assert account is None
