@@ -45,6 +45,9 @@ api-attach:
 	@echo "Use ^p and ^q to quit"
 	docker attach $(docker ps --filter name="-api-" -q)
 
+test:
+	tox
+
 # ===== Optional ===== #
 
 up-postgres:
