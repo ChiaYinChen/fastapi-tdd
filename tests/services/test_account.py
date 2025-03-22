@@ -13,7 +13,7 @@ from src import repositories as crud
 from src.core.config import settings
 from src.core.security import decode_url_safe_token, encode_url_safe_token
 from src.models.account import Account as AccountModel
-from src.schemas.account import AccountCreate
+from src.schemas.account import AccountCreate, AccountUpdate, ResetPassword
 from src.services.account import AccountService
 
 if TYPE_CHECKING:
@@ -70,3 +70,28 @@ def test_verify_account_with_expired_token() -> None:
     mock_token = encode_url_safe_token({"email": settings.TEST_ACCOUNT_EMAIL})
     with pytest.raises(itsdangerous.exc.SignatureExpired):
         decode_url_safe_token(mock_token, max_age=-1)
+
+
+async def test_reset_password(mocker: MockerFixture) -> None:
+    """Test reset password logic in `AccountService.reset_password`."""
+    # Arrange: prepare input data for password reset
+    pwd_in = ResetPassword(current_password="mock_old_password", new_password="mock_new_password")
+    mock_with_old_pwd = AccountModel(email=settings.TEST_ACCOUNT_EMAIL, hashed_password="mock_old_hash_password")
+
+    # Arrange: mock the AccountUpdate object with the new password
+    mock_updated_in = AccountUpdate(password=pwd_in.new_password)
+    assert "$pbkdf2-sha256" in mock_updated_in.hashed_password
+    mocker.patch("src.services.account.AccountUpdate", return_value=mock_updated_in)
+
+    # Arrange: mock the updated account object
+    mock_with_new_pwd = AccountModel(email=settings.TEST_ACCOUNT_EMAIL, hashed_password=mock_updated_in.hashed_password)
+    mocker.patch.object(crud.account, "update", new=AsyncMock(return_value=mock_with_new_pwd))
+
+    # Act: call the function under test
+    result = await AccountService.reset_password(account_obj=mock_with_old_pwd, pwd_in=pwd_in)
+
+    # Assert: verify the expected behavior
+    crud.account.update.assert_called_once_with(db_obj=mock_with_old_pwd, obj_in=mock_updated_in)
+    assert result == mock_with_new_pwd
+    assert result.hashed_password == mock_updated_in.hashed_password
+    assert result.email == settings.TEST_ACCOUNT_EMAIL

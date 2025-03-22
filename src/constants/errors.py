@@ -5,6 +5,9 @@ class CustomErrorCode(str, Enum):
     # validation errors
     VALIDATE_ERROR = "0000"  # General validation error
 
+    # user-related errors
+    RESET_PASSWORD_MISMATCH = "2001"  # Mismatch between reset password request and user
+
     # entity errors
     ENTITY_NOT_FOUND = "1001"  # Entity not found
     ENTITY_CONFLICT = "1002"  # Conflict between entities in the system

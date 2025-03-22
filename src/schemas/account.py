@@ -39,4 +39,20 @@ class Account(BaseModel):
 class AccountUpdate(BaseModel):
     """Input schema for update account."""
 
-    pass
+    model_config = ConfigDict(populate_by_name=True)
+
+    email: str | None = None
+    hashed_password: str = Field(None, min_length=6, alias="password")
+    name: str | None = None
+    is_active: bool | None = None
+
+    @field_validator("hashed_password", mode="after")
+    def set_hashed_password(cls, value: str) -> str:
+        return get_password_hash(value)
+
+
+class ResetPassword(BaseModel):
+    """Schema for the data required to reset password."""
+
+    current_password: str = Field(..., min_length=6)
+    new_password: str = Field(..., min_length=6)

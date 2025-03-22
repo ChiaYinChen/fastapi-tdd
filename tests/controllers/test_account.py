@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock
 from src.controllers.account import email_sender
 from src.core.config import settings
 from src.models.account import Account as AccountModel
-from src.schemas.account import AccountCreate
+from src.schemas.account import AccountCreate, ResetPassword
 from src.services.account import AccountService
 from tests.utils.validator import is_valid_time_format
 
@@ -69,3 +69,44 @@ async def test_verifiy_account_success(client: AsyncClient, mocker: MockerFixtur
     assert resp.status_code == 200
     assert resp.json()["message"] == "Account verified successfully"
     AccountService.verify_account.assert_called_once_with(mock_token)
+
+
+async def test_reset_password_success(
+    client: AsyncClient,
+    normal_user_token_headers: dict[str, str],
+    authenticated_member: AccountModel,
+    mocker: MockerFixture,
+) -> None:
+    """Test reset password via `/api/accounts/reset-password`."""
+    # Arrange: prepare valid input data and mock the reset_password method
+    pwd_in = ResetPassword(current_password=settings.TEST_ACCOUNT_PASSWORD, new_password="mock_new_password")
+    mocker.patch.object(AccountService, "reset_password")
+
+    # Act: send POST request to reset password endpoint
+    resp = await client.post(
+        "/api/accounts/reset-password", json=pwd_in.model_dump(), headers=normal_user_token_headers
+    )
+
+    # Assert: Verify the response status and method call
+    assert resp.status_code == 204
+    AccountService.reset_password.assert_called_once_with(account_obj=authenticated_member, pwd_in=pwd_in)
+
+
+async def test_reset_password_with_current_password_mismatch(
+    client: AsyncClient,
+    normal_user_token_headers: dict[str, str],
+    authenticated_member: AccountModel,
+) -> None:
+    """Test reset password via `/api/accounts/reset-password` when current password is incorrect."""
+    # Arrange: prepare input data with incorrect current password
+    pwd_in = ResetPassword(current_password="wrong_old_password", new_password="mock_new_password")
+
+    # Act: send POST request to reset password endpoint
+    resp = await client.post(
+        "/api/accounts/reset-password", json=pwd_in.model_dump(), headers=normal_user_token_headers
+    )
+
+    # Assert: verify the response status and error message
+    assert resp.status_code == 400
+    assert resp.json()["error_code"] == "2001"
+    assert resp.json()["message"] == "Incorrect password"

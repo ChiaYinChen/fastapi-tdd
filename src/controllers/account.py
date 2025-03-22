@@ -3,7 +3,8 @@ from typing import Any
 from fastapi import APIRouter, status
 
 from ..constants.errors import CustomErrorCode
-from ..schemas.account import Account, AccountCreate
+from ..dependencies.auth import AuthenticatedMember
+from ..schemas.account import Account, AccountCreate, ResetPassword
 from ..schemas.response import GenericResponse
 from ..services.account import AccountService
 from ..utils import exceptions as exc
@@ -45,3 +46,13 @@ async def confirm_email_verification(token: str) -> Any:
     """
     await AccountService.verify_account(token)
     return GenericResponse(message="Account verified successfully")
+
+
+@router.post(
+    "/reset-password",
+)
+async def reset_password(current_user: AuthenticatedMember, pwd_in: ResetPassword) -> Any:
+    """
+    Reset user's password.
+    """
+    pass

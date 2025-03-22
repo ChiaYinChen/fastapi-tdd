@@ -5,7 +5,7 @@ from ..constants.errors import CustomErrorCode
 from ..core.config import settings
 from ..core.security import decode_url_safe_token
 from ..models.account import Account as AccountModel
-from ..schemas.account import AccountCreate
+from ..schemas.account import AccountCreate, ResetPassword
 from ..utils import exceptions as exc
 
 
@@ -35,3 +35,8 @@ class AccountService:
         if not account:
             raise exc.NotFoundError(CustomErrorCode.ENTITY_NOT_FOUND, "Account not found")
         await crud.account.update(db_obj=account, obj_in={"is_verified": True, "verified_at": datetime.now()})
+
+    @classmethod
+    async def reset_password(cls, account_obj: AccountModel, pwd_in: ResetPassword) -> AccountModel:
+        """Reset the user's password."""
+        pass
