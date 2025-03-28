@@ -5,7 +5,7 @@ from ..constants.errors import CustomErrorCode
 from ..core.config import settings
 from ..core.security import decode_url_safe_token
 from ..models.account import Account as AccountModel
-from ..schemas.account import AccountCreate, ResetPassword
+from ..schemas.account import AccountCreate, AccountUpdate, ResetPassword
 from ..utils import exceptions as exc
 
 
@@ -39,4 +39,5 @@ class AccountService:
     @classmethod
     async def reset_password(cls, account_obj: AccountModel, pwd_in: ResetPassword) -> AccountModel:
         """Reset the user's password."""
-        pass
+        updated_account = AccountUpdate(password=pwd_in.new_password)
+        return await crud.account.update(db_obj=account_obj, obj_in=updated_account)

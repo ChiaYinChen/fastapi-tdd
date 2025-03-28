@@ -1,8 +1,9 @@
 from typing import Any
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Response, status
 
 from ..constants.errors import CustomErrorCode
+from ..core.security import verify_password
 from ..dependencies.auth import AuthenticatedMember
 from ..schemas.account import Account, AccountCreate, ResetPassword
 from ..schemas.response import GenericResponse
@@ -55,4 +56,7 @@ async def reset_password(current_user: AuthenticatedMember, pwd_in: ResetPasswor
     """
     Reset user's password.
     """
-    pass
+    if not verify_password(pwd_in.current_password, current_user.hashed_password):
+        raise exc.BadRequestError(CustomErrorCode.RESET_PASSWORD_MISMATCH, "Incorrect password")
+    await AccountService.reset_password(account_obj=current_user, pwd_in=pwd_in)
+    return Response(status_code=204)
